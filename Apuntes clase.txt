@@ -4,3 +4,7 @@ Itinerario:
 - Proyecto con asistencia de Maven --> Familiarizar con clases útiles (Strings)
 -* Git y GitHub --> (Opcional) 
 -* Empezar a hablar de objetos -> Requerimiento de notas
+
+
+Clases útiles: 
+La clase String es un objeto y tiene muchos comportamientos  
