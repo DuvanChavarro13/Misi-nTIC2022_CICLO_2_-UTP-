@@ -17,21 +17,27 @@ public class Ejercicio1 {
         int numeroSuerte = 0; 
 
         //Extraer cada pedazo al String
-        String [] arregloFecha = fecha.split("/",5);
+        String [] arregloFecha = fecha.split("/",3);
+        //12/03/2000
 
         int valorDia = Integer.parseInt(arregloFecha[0]); 
         int valorMes = Integer.parseInt(arregloFecha[1]);
         int valorAño = Integer.parseInt(arregloFecha[2]);
  
         int sumatoriaPartesFecha = valorDia + valorMes + valorAño;
-        //System.out.println("sumatoriaPartesFecha: " + sumatoriaPartesFecha);
-
         //Ahora de la sumatoria extraer las cifras
+        /*
+        while (sumatoriaPartesFecha > 0) {
+            numeroSuerte += sumatoriaPartesFecha % 10; 
+            sumatoriaPartesFecha = (sumatoriaPartesFecha / 10);
+        }
+        */
         String sumatoriaCadena = Integer.toString(sumatoriaPartesFecha);
         for (int i = 0; i < sumatoriaCadena.length(); i++){
             numeroSuerte = numeroSuerte + Character.getNumericValue(sumatoriaCadena.charAt(i));
             //System.out.println("numero de la suerte: " + numeroSuerte);
         }
+        
         return numeroSuerte;
     }
 
