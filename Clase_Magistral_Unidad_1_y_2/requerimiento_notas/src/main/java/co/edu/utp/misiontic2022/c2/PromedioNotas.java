@@ -2,8 +2,6 @@ package co.edu.utp.misiontic2022.c2;
 
 import java.util.Scanner;
 
-import javax.sound.sampled.SourceDataLine;
-
 public class PromedioNotas {
 
     /* 
