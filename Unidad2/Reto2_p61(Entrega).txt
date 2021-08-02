@@ -1,0 +1,250 @@
+import java.util.ArrayList;
+public class Venta {
+    
+    //Atributos
+    
+    private double totalFrutas;
+    private double totalFrutasOrganicas;
+    private double totalFrutasConvencionales;
+    private ArrayList<Fruta> listaFrutas = new ArrayList<Fruta>();
+    private int frutaObsequio = -1;
+
+    //Constructor 
+
+    public Venta(ArrayList<Fruta> pListaFrutas){
+        this.listaFrutas = pListaFrutas;
+        this.totalFrutas = 0;
+        this.totalFrutasOrganicas = 0;
+        this.totalFrutasConvencionales = 0;
+        this.frutaObsequio = -1;
+    }
+    
+    //Requerimiento principal -> Realizar los cálculos de la venta o pedido
+    public void mostrarTotales(){
+
+        int numOrganicas = 0;
+        int numConvencionales = 0;
+
+        for (int i = 0; i < this.listaFrutas.size(); i++){
+            if(this.listaFrutas.get(i) instanceof Convencional){
+                numConvencionales++;
+                this.totalFrutasConvencionales += this.listaFrutas.get(i).calcularPrecio();
+            
+            }else if(this.listaFrutas.get(i) instanceof Organica){
+                numOrganicas++;
+                this.totalFrutasOrganicas += this.listaFrutas.get(i).calcularPrecio();
+
+                if(this.frutaObsequio == -1){
+                    this.frutaObsequio = i;
+                }else{
+                    if(this.listaFrutas.get(this.frutaObsequio).calcularPrecio() < this.listaFrutas.get(i).calcularPrecio()){
+                        this.frutaObsequio = i;
+                    }
+                }
+            }else if(this.listaFrutas.get(i) instanceof Fruta){
+                this.totalFrutas += this.listaFrutas.get(i).calcularPrecio();
+            }
+        }
+        
+        //Cálculo valor total de la compra
+        double totalCompra = this.totalFrutas + this.totalFrutasConvencionales + this.totalFrutasOrganicas;
+        
+        //Primera parte de la salida
+        System.out.println("Valor frutas cultivo convencional = " + this.totalFrutasConvencionales);
+        System.out.println("Valor frutas cultivo orgánico = "+ this.totalFrutasOrganicas);
+        
+        //Condiciones para reportar obsequio
+            //1) Mayor número de productos orgánicos
+            //2) Por lo menos un obsequio cargado en los atributos del pedido después de revisión del listado
+            if(numOrganicas > numConvencionales){
+                String nombreObsequio = listaFrutas.get(this.frutaObsequio).getNombre();
+                double descuento = listaFrutas.get(this.frutaObsequio).calcularPrecio() * 0.5;
+                //Se descuenta a la totalCompra, la mitad del precio del item con descuento
+                totalCompra -= descuento;
+                
+                //Descontar el 50% del producto orgánico de mayor valor
+                System.out.println("Se han descontado " + descuento + " en el ítem " + nombreObsequio + " tipo orgánico");
+            }   
+            
+        //Parte final
+        System.out.println("Valor total compra = " + (totalFrutas + totalCompra));
+    }
+
+
+}
+
+
+
+public class Fruta {
+    
+    //Atributos
+    private static final int GRAMAJE_BASE_VENTA = 200;
+    private String nombre; 
+    private double precioBase; 
+    protected int gramosVenta; 
+    protected boolean importada = false;
+
+    //Constructores 
+    
+    public Fruta(String pNombre, double pPrecio){ 
+        this.nombre = pNombre;
+        this.precioBase = pPrecio;
+        this.gramosVenta = Fruta.GRAMAJE_BASE_VENTA;
+    }    
+    
+    public Fruta(String pNombre, double pPrecio, int pGramosVenta){
+        this(pNombre, pPrecio);
+        this.gramosVenta = pGramosVenta < Fruta.GRAMAJE_BASE_VENTA ? Fruta.GRAMAJE_BASE_VENTA : pGramosVenta;
+        /** 
+        if (pGramosVenta < Fruta.GRAMAJE_BASE_VENTA){
+            this.gramosVenta = Fruta.GRAMAJE_BASE_VENTA;
+        }else{
+            this.gramosVenta = pGramosVenta;
+        }
+        */
+    }   
+    
+    public Fruta(String pNombre, double pPrecio, int pGramosVenta, boolean pImportada){
+        this(pNombre, pPrecio, pGramosVenta);
+        this.importada = pImportada;
+    }    
+    
+    //Métodos
+    public double calcularPrecio(){  
+        double precioVenta = this.precioBase * this.gramosVenta;
+        if (this.importada){
+            precioVenta += precioVenta * 0.1;
+        }
+        return precioVenta;
+    }
+
+    //Getters y Setters
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public double getPrecioBase() {
+        return precioBase;
+    }
+
+    public void setPrecioBase(double precioBase) {
+        this.precioBase = precioBase;
+    }
+    
+}
+
+
+public class Organica extends Fruta{
+
+    //Atributos
+    private static final double DESCUENTO_NACIONALES_BASE = 0.05;
+    private static final int GRAMAJE_MINIMO_DESCUENTO_NACIONAL = 250;
+    private static final double SUBSIDIO_BASE = 0.12;
+    private double descuentoNacionales;
+    private double subsidio;
+
+
+    //Constructores
+    public Organica(String pNombre, double pPrecio){
+        super(pNombre, pPrecio);
+        this.descuentoNacionales = Organica.DESCUENTO_NACIONALES_BASE;
+        this.subsidio = Organica.SUBSIDIO_BASE;
+    }    
+    
+    public Organica(String pNombre, double pPrecio, int pGramosVenta){
+        this(pNombre, pPrecio);
+        super.gramosVenta = pGramosVenta;
+    }    
+    
+    public Organica(String pNombre, double pPrecio, double pDescuentoNacionales){
+        super(pNombre, pPrecio);
+        this.descuentoNacionales = pDescuentoNacionales;
+    }    
+    
+    public Organica(String pNombre, double pPrecio, double pDescuentoNacionales, double pSubsidio){
+        this(pNombre, pPrecio, pDescuentoNacionales);
+        this.subsidio = pSubsidio;
+    }
+    
+    public Organica(String pNombre, double pPrecio, double pDescuentoNacionales, double pSubsidio, int pGramosVenta, boolean pImportada){
+        this(pNombre, pPrecio, pDescuentoNacionales, pSubsidio);
+        super.gramosVenta = pGramosVenta;
+        super.importada = pImportada;
+    }
+    
+    //Métodos 
+    public double calcularPrecio(){
+        //Precio de venta original para cualquier fruta
+        double precioVenta = super.calcularPrecio();
+
+        //Condición 1: Se agrega el subsidio del 12%
+        double precioVentaOrganica = precioVenta + (precioVenta * this.subsidio);
+
+        //Condición 2: Si se aplica descuento si: 
+            // -Es nacional
+            // -Si cumple es mayor o igual al gramaje de compra minimo 
+        if(!super.importada && super.gramosVenta >= Organica.GRAMAJE_MINIMO_DESCUENTO_NACIONAL){
+            precioVentaOrganica -= precioVenta * this.descuentoNacionales; 
+        }
+
+        return precioVentaOrganica;
+    }
+
+}
+
+public class Convencional extends Fruta {
+    
+    //Atributos
+    private static final double RECARGO_CONVENCIONAL_BASE = 0.08;
+    private double recargoConvencionales;
+    private int gradoAditamientos = 1;
+
+    //Constructores
+    public Convencional(String pNombre, double pPrecio){
+        super(pNombre, pPrecio);
+        this.recargoConvencionales = Convencional.RECARGO_CONVENCIONAL_BASE;
+    }    
+    
+    public Convencional(String pNombre, double pPrecio, double pRecargo){
+        this(pNombre, pPrecio);
+        this.recargoConvencionales = pRecargo;
+    }    
+    
+    public Convencional(String pNombre, double pPrecio, double pRecargo, int pGradoAditamentos){
+        this(pNombre, pPrecio, pRecargo);
+        this.gradoAditamientos = pGradoAditamentos;
+
+    }    
+    
+    public Convencional(String pNombre, double pPrecio, double pRecargo, int pGradoAditamentos, int pGramosVenta, boolean pImportada){
+        this(pNombre, pPrecio, pRecargo, pGradoAditamentos);
+        super.gramosVenta = pGramosVenta;
+        super.importada = pImportada;
+
+    }
+    
+    public Convencional(String pNombre, double pPrecio, int pGramosVenta, boolean pImportada){
+        this(pNombre, pPrecio);
+        super.gramosVenta = pGramosVenta;
+        super.importada = pImportada;
+    }
+    
+    //Métodos
+    public double calcularPrecio(){
+        //Precio de venta original para cualquier fruta
+        double precioVenta = super.calcularPrecio();
+       
+        //Recargo por defecto, predefinido o viene por parámetro.
+        double precioVentaConvencional = precioVenta + precioVenta * this.recargoConvencionales;
+      
+        //Aumento del precio en un 1% por el grado de aditamientos que se le indique
+        precioVentaConvencional += precioVenta * (this.gradoAditamientos * 0.01);
+        
+        return precioVentaConvencional;
+    } 
+}
