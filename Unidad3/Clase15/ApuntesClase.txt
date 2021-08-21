@@ -1,0 +1,21 @@
+Conceptos SQL -> DML (Consultas)
+--------------------------------
+- Manipulación de cadenas.*
+- Expresiones aritméticas en las consultas.*
+- Funciones de agregación.*
+- Relacionamiento de tablas (JOIN).*
+- Renombramiento de las tablas.*
+- Agrupamientos y agregación tablas.*
+- Desempates de ordenamiento.*
+- Diferencia entre HAVING y WHERE (IN).*
+- Comparaciones de cadenas con LIKE (Expresiones Regulares).
+
+Sitios recomendados:
+--------------------
+https://www.sqlitetutorial.net/
+https://www.w3schools.com/sql/sql_join.asp
+https://www.sqlite.org/lang_aggfunc.html -> Funciones de agregación por defecto
+
+
+
+
