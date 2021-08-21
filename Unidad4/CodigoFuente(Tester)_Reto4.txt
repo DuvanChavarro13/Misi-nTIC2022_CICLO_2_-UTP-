@@ -1,0 +1,434 @@
+import java.util.ArrayList;
+import java.io.File;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+//Vista
+public class VistaRequerimientosReto4 {
+    
+    public static final ControladorRequerimientosReto4 controlador = new ControladorRequerimientosReto4();
+    
+     public static void requerimiento1(){
+        System.out.println("-----10 Proyectos Mayor Gasto-------");       
+        try{
+            ArrayList<ProyectoRankeadoCompras> rankingProyectosCompras = controlador.consultarProyectosCompras10();
+            System.out.println("ID_Proyecto Clasificación Gasto_Compras Serial"); 
+            for (ProyectoRankeadoCompras compras : rankingProyectosCompras) {
+                System.out.printf("%d %s %d %s %n",
+                    compras.getIdProyecto(),
+                    compras.getClasificacion(),
+                    compras.getGastoCompras(),
+                    compras.getSerial()
+                );
+            }
+        }catch(SQLException e){
+            System.err.println("Ha ocurrido un error!"+e.getMessage());
+        }
+    }
+
+
+    public static void requerimiento3(){
+        System.out.println("-----Ranking Descendente Bancos (Área Proyectos)-------");       
+        try{
+            ArrayList<BancoRankeadoAreaPromedio> rankingBancosArea = controlador.consultarBancosRankeadosAreaPromedio();
+            System.out.println("Banco_Vinculado Area_Promedio");
+            for (BancoRankeadoAreaPromedio bancos : rankingBancosArea) {
+                System.out.printf("%s %f %n",
+                    bancos.getBancoVinculado(),
+                    bancos.getAreaPromedio()
+                );      
+            }
+        }catch(SQLException e){
+            System.err.println("Ha ocurrido un error!"+e.getMessage());
+        }
+    }
+
+    
+    public static void requerimiento5(){
+        System.out.println("-----Ranking Descendente Materiales Importados (Compras)-------");       
+        try{
+            ArrayList<MaterialRankeadoCompras> rankingMaterialesImportados = controlador.consultarMaterialesRankeadosCompras();
+            System.out.println("Nombre_Material Importado No_Compras");
+            for (MaterialRankeadoCompras material : rankingMaterialesImportados) {
+                System.out.printf("%s %s %d %n", 
+                    material.getNombreMaterial(),
+                    material.getImportado(),
+                    material.getNumeroCompras()
+                );
+            }
+        }catch(SQLException e){
+            System.err.println("Ha ocurrido un error!"+e.getMessage());
+        }
+    }
+
+}
+
+
+
+//Controlador
+public class ControladorRequerimientosReto4 {
+    
+    //Alojar intancias de la clase del modelo DAO 
+    private final ProyectoRankeadoComprasDao comprasDao;
+    private final BancoRankeadoAreaPromedioDao bancoDao;
+    private final MaterialRankeadoComprasDao materialDao;
+
+
+    //Constructores
+    public ControladorRequerimientosReto4(){
+        
+        //Instancia del banco rankeado
+        this.bancoDao = new BancoRankeadoAreaPromedioDao();
+        //Instancia de las compras rankeadas
+        this.comprasDao = new ProyectoRankeadoComprasDao();
+        //Instancia de los materiales rankeados 
+        this.materialDao = new MaterialRankeadoComprasDao();
+    }
+
+    //Requerimiento 1 del Reto3 / Requerimiento 1 del Reto4
+    public ArrayList<ProyectoRankeadoCompras> consultarProyectosCompras10() throws SQLException {
+        return this.comprasDao.rankingProyectosComprasDescendente10();
+    }
+
+
+    //Requerimiento 3 del Reto3 / Requerimiento 2 del Reto4
+    public ArrayList<BancoRankeadoAreaPromedio> consultarBancosRankeadosAreaPromedio() throws SQLException {
+        return this.bancoDao.rankingBancosAreaPromedioDescendente();
+    }
+
+    
+    //Requerimiento 5 del Reto3 / Requerimiento 3 del Reto4
+    public ArrayList<MaterialRankeadoCompras> consultarMaterialesRankeadosCompras() throws SQLException {
+        return this.materialDao.rankingMaterialesComprasDescendente();
+    }
+
+}
+
+
+//DAO's
+
+//ProyectoRankeadoComprasDAO
+public class ProyectoRankeadoComprasDao {
+
+    //Obtener los 10 proyectos rankeados según las compras
+    public ArrayList<ProyectoRankeadoCompras> rankingProyectosComprasDescendente10() throws SQLException {
+
+        ArrayList<ProyectoRankeadoCompras> respuesta = new ArrayList<ProyectoRankeadoCompras>();
+        Connection conexion = null;
+
+        try{
+            conexion = JDBCUtilities.getConnection();
+
+            String consulta = "SELECT " + 
+                                "p.ID_Proyecto, " +
+                                "p.Clasificacion, " +
+                                "SUM(c.Cantidad * mc.Precio_Unidad) AS Gasto_Compras, " + 
+                                "p.Serial " + 
+                              "FROM Proyecto AS p " +
+                              "INNER JOIN Compra AS c " +
+                                "ON p.ID_Proyecto = c.ID_Proyecto " +
+                              "INNER JOIN MaterialConstruccion AS mc " +
+                                "ON mc.ID_MaterialConstruccion = c.ID_MaterialConstruccion " +
+                              "GROUP BY p.ID_Proyecto " +
+                              "ORDER BY Gasto_Compras DESC " +
+                              "LIMIT 10 ";
+
+            PreparedStatement statement = conexion.prepareStatement(consulta);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            while(resultSet.next()){
+                //Cargar registro actual en un Valu Object
+                ProyectoRankeadoCompras compras = new ProyectoRankeadoCompras();
+
+                compras.setIdProyecto(resultSet.getInt("ID_Proyecto"));
+                compras.setClasificacion(resultSet.getString("Clasificacion"));
+                compras.setGastoCompras(resultSet.getInt("Gasto_Compras"));
+                compras.setSerial(resultSet.getString("Serial"));
+
+                respuesta.add(compras);
+            }
+
+            resultSet.close();
+            statement.close();
+
+        }catch(SQLException e){
+            System.err.println("Error consultando proyectos rankeados de las compras" + e);
+        
+        }finally{
+            if(conexion != null){
+                conexion.close();
+            }
+        }
+
+        return respuesta;
+        
+    } 
+ 
+}
+
+//BancoRankeadoAreaPromedioDAO
+public class BancoRankeadoAreaPromedioDao {
+    
+    //Obtener los bancos rankeados por área promedio de los proyectos que respaldan
+    public ArrayList<BancoRankeadoAreaPromedio> rankingBancosAreaPromedioDescendente() throws SQLException{
+
+        ArrayList<BancoRankeadoAreaPromedio> respuesta = new ArrayList<BancoRankeadoAreaPromedio>();
+        Connection conexion = null;
+
+        try{
+            conexion = JDBCUtilities.getConnection();
+
+            String consulta = "SELECT " +  
+                                "p.Banco_Vinculado, " +
+                                "AVG(t.Area_Max) AS Area_Promedio " + 
+                              "FROM Proyecto AS p " +  
+                              "INNER JOIN Tipo AS t " +
+                                "ON p.ID_Tipo = t.ID_Tipo " +
+                              "GROUP BY p.Banco_Vinculado " +
+                              "ORDER BY Area_Promedio DESC";
+            
+            PreparedStatement statement = conexion.prepareStatement(consulta);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            while(resultSet.next()){
+    
+                BancoRankeadoAreaPromedio banco = new BancoRankeadoAreaPromedio();
+
+                banco.setBancoVinculado(resultSet.getString("Banco_Vinculado"));
+                banco.setAreaPromedio(resultSet.getDouble("Area_Promedio"));
+
+                respuesta.add(banco);
+            }
+
+            resultSet.close();
+            statement.close();
+
+        }catch(SQLException e){
+            System.err.println("Error consultando bancos rankeados areaMax promedio" + e);
+        
+        }finally{
+            if(conexion != null){
+                conexion.close();
+            }
+        }
+
+        return respuesta;
+    }
+
+}
+
+
+//MaterialRankeadoComprasDAO
+public class MaterialRankeadoComprasDao {
+
+    //Obtener los importados más comprados
+    public ArrayList<MaterialRankeadoCompras> rankingMaterialesComprasDescendente() throws SQLException {
+
+        ArrayList<MaterialRankeadoCompras> respuesta = new ArrayList<MaterialRankeadoCompras>();
+        Connection conexion = null;
+
+        try{
+            conexion = JDBCUtilities.getConnection();
+
+            String consulta = "SELECT " +
+                                "mc.Nombre_Material, " +
+                                "mc.Importado, " +
+                                "COUNT(mc.ID_MaterialConstruccion * c.Cantidad) AS No_Compras " +
+                              "FROM MaterialConstruccion AS mc " +
+                              "INNER JOIN Compra AS c " +
+                                "ON c.ID_MaterialConstruccion = mc.ID_MaterialConstruccion " +
+                              "WHERE mc.Importado IN ('si', 'Si') " +
+                              "GROUP BY mc.Nombre_Material " +
+                              "ORDER BY " +
+                                "No_Compras DESC, " +
+                                "mc.Nombre_Material ASC ";
+
+            PreparedStatement statement = conexion.prepareStatement(consulta);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            while(resultSet.next()) {
+                MaterialRankeadoCompras material = new MaterialRankeadoCompras();
+
+                material.setNombreMaterial(resultSet.getString("Nombre_Material"));
+                material.setImportado(resultSet.getString("Importado"));
+                material.setNumeroCompras(resultSet.getInt("No_Compras"));
+
+                respuesta.add(material);
+            }
+
+        }catch(SQLException e){
+            System.err.println("Error consultando material rankeado por compras" + e);
+        
+        }finally{
+            if(conexion != null){
+                conexion.close();
+            }
+        }
+        return respuesta;
+    }
+}
+
+
+//VO's
+
+//ProyectoRankeadoCompras
+public class ProyectoRankeadoCompras {
+
+    //Atributos
+    private Integer idProyecto;
+    private String clasificacion;
+    private Integer gastoCompras;
+    private String serial; 
+
+    //Constructor 
+    public ProyectoRankeadoCompras(){
+
+    }
+
+    //Getters y Setters
+    public Integer getIdProyecto() {
+        return idProyecto;
+    }
+
+    public void setIdProyecto(Integer idProyecto) {
+        this.idProyecto = idProyecto;
+    }
+
+    public String getClasificacion() {
+        return clasificacion;
+    }
+
+    public void setClasificacion(String clasificacion) {
+        this.clasificacion = clasificacion;
+    }
+
+    public Integer getGastoCompras() {
+        return gastoCompras;
+    }
+
+    public void setGastoCompras(Integer gastoCompras) {
+        this.gastoCompras = gastoCompras;
+    }
+
+    public String getSerial() {
+        return serial;
+    }
+
+    public void setSerial(String serial) {
+        this.serial = serial;
+    }
+    
+}
+
+//BancoRankeadoAreaPromedio
+public class BancoRankeadoAreaPromedio {
+    
+    //Atributos --> Columnas de la tabla que representa la misma entidad 
+    private String bancoVinculado;
+    private Double areaPromedio;
+
+    //Constructores 
+
+    public BancoRankeadoAreaPromedio(){
+
+    }
+
+    public BancoRankeadoAreaPromedio(String bancoVinculado, Double areaPromedio){
+        this.bancoVinculado = bancoVinculado;
+        this.areaPromedio = areaPromedio;
+    }
+    
+    //Getters y Setters
+    public String getBancoVinculado() {
+        return bancoVinculado;
+    }
+    public void setBancoVinculado(String bancoVinculado) {
+        this.bancoVinculado = bancoVinculado;
+    }
+    public Double getAreaPromedio() {
+        return areaPromedio;
+    }
+    public void setAreaPromedio(Double areaPromedio) {
+        this.areaPromedio = areaPromedio;
+    }
+
+}
+
+
+//MaterialRankeadoCompras
+public class MaterialRankeadoCompras {
+
+    //Atributos 
+    private String nombreMaterial;
+    private String importado;
+    private Integer numeroCompras;
+
+
+    //Constructor
+    public MaterialRankeadoCompras(){
+    
+    }
+
+    public MaterialRankeadoCompras(String nombreMaterial, String importado, Integer numeroCompras){
+        this.nombreMaterial = nombreMaterial;
+        this.importado = importado;
+        this.numeroCompras = numeroCompras;
+    }
+
+    //Getters y Setters
+    public String getNombreMaterial() {
+        return nombreMaterial;
+    }
+
+
+    public void setNombreMaterial(String nombreMaterial) {
+        this.nombreMaterial = nombreMaterial;
+    }
+
+
+    public String getImportado() {
+        return importado;
+    }
+
+
+    public void setImportado(String importado) {
+        this.importado = importado;
+    }
+
+
+    public Integer getNumeroCompras() {
+        return numeroCompras;
+    }
+
+
+    public void setNumeroCompras(Integer numeroCompras) {
+        this.numeroCompras = numeroCompras;
+    }
+
+}
+
+
+//JDBCUtilities
+public class JDBCUtilities {
+
+    //Atributos de clase para gestión de conexión con la base de datos      
+    private static final String UBICACION_BD = "ProyectosConstruccion.db";    
+    //private static final String UBICACION_BD = "C:\\basesDeDatosMinTic\\ProyectosConstruccion.db";    
+    
+    public static Connection getConnection() throws SQLException {
+        String url = "jdbc:sqlite:" + UBICACION_BD;        
+        return DriverManager.getConnection(url);
+    }
+
+    public static boolean estaVacia(){
+        File archivo = new File(JDBCUtilities.UBICACION_BD);        
+        return archivo.length() == 0;
+    }
+    
+}
